@@ -33,5 +33,9 @@ def chat(query: str):
     "answer": result  
     })
 
+# graph_builder = StateGraph(State).add_sequence([retrieve, generate])
+# graph_builder.add_edge(START, "retrieve")
+# graph = graph_builder.compile()
+
 if __name__ == '__main__':
   uvicorn.run("api:app", host="0.0.0.0", port=8080, reload=True)
