@@ -6,9 +6,16 @@ from fastapi import Form
 from brain import Brain
 import uvicorn
 from fastapi.responses import JSONResponse
+from langgraph.graph import START, StateGraph
+from state import State
+from storage import Storage
+from cleaner import Cleaner
 
 app = FastAPI()
 brain = Brain()
+storage = Storage('test-index')
+cleaner = Cleaner()
+
 print("Starting server")
 
 origins = ["*"]
@@ -25,6 +32,22 @@ def healthcheck():
   msg = "API is up and running!"  
   return {"message": msg}
 
+
+@app.get('/test')
+def test():    
+  data = cleaner.get_test_data()
+  print("Data cleaned:", data)
+
+  storage.index_data(data)  
+  print("Index:", storage.index.describe_index_stats())
+
+  graph_builder = StateGraph(State).add_sequence([storage.retrieve, brain.generate])
+  graph_builder.add_edge(START, "retrieve")
+  graph = graph_builder.compile()
+  
+  response = graph.invoke({"question": "What is Task Decomposition?"})
+  return {"message": response["answer"]}
+
 @app.post('/chat')
 def chat(query: str):
   result = brain.ask(query)
@@ -32,10 +55,6 @@ def chat(query: str):
     "question":query,
     "answer": result  
     })
-
-# graph_builder = StateGraph(State).add_sequence([retrieve, generate])
-# graph_builder.add_edge(START, "retrieve")
-# graph = graph_builder.compile()
 
 if __name__ == '__main__':
   uvicorn.run("api:app", host="0.0.0.0", port=8080, reload=True)

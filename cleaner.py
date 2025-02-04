@@ -2,7 +2,7 @@ from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import bs4
 
-class cleaner():
+class Cleaner():
     def __init__(self):
         self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
 
@@ -16,5 +16,5 @@ class cleaner():
             ),
         )
         docs = loader.load();
-        split_data = self.text_splitter.split(docs);
+        split_data = self.text_splitter.split_documents(docs);
         return split_data

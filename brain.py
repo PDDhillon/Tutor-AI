@@ -1,4 +1,4 @@
-from langchain_google_vertexai import ChatVertexAI, VertexAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain import hub
@@ -7,12 +7,12 @@ import os
 
 class Brain():
     def __init__(self):
-          self.llm = ChatVertexAI(
+          print(os.getenv('GOOGLE_API_KEY'))
+          self.llm = ChatGoogleGenerativeAI(
               model='gemini-1.5-pro',
               temperature=0,
               api_key=os.getenv('GOOGLE_API_KEY')
           )
-          self.vectoriser = VertexAIEmbeddings(model='text-embedding-004')
           self.base_prompt = hub.pull("rlm/rag-prompt")
 
     def ask(self, query: str):
