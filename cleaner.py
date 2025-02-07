@@ -1,5 +1,6 @@
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import S3FileLoader
 import bs4
 
 class Cleaner():
@@ -18,3 +19,11 @@ class Cleaner():
         docs = loader.load();
         split_data = self.text_splitter.split_documents(docs);
         return split_data
+    
+    async def clean_data(self, filename:str):
+        loader = S3FileLoader('pdbucketdev', filename)
+        docs = loader.load();
+        split_data = self.text_splitter.split_documents(docs);
+        return split_data
+        
+        
