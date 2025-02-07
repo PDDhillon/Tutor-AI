@@ -1,1 +1,1 @@
-# study-buddy
+# Tutor-AI
