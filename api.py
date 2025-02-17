@@ -19,8 +19,8 @@ storage = Storage('test-index')
 cleaner = Cleaner()
 s3_client = boto3.client('s3')
 
-graph_builder = StateGraph(State).add_sequence([storage.retrieve, brain.generate])
-graph_builder.add_edge(START, "retrieve")
+graph_builder = StateGraph(State).add_sequence([storage.retrieve_old, brain.generate])
+graph_builder.add_edge(START, "retrieve_old")
 graph = graph_builder.compile()
 
 print("Starting server")
@@ -38,22 +38,6 @@ app.add_middleware(
 def healthcheck():
   msg = "API is up and running!"  
   return {"message": msg}
-
-
-@app.get('/test')
-def test():    
-  data = cleaner.get_test_data()
-  print("Data cleaned:", data)
-
-  storage.index_data(data)  
-  print("Index:", storage.index.describe_index_stats())
-
-  graph_builder = StateGraph(State).add_sequence([storage.retrieve, brain.generate])
-  graph_builder.add_edge(START, "retrieve")
-  graph = graph_builder.compile()
-  
-  response = graph.invoke({"question": "What is Task Decomposition?"})
-  return {"message": response["answer"]}
 
 @app.post('/chat')
 def chat(query: str):
@@ -73,7 +57,6 @@ async def index(file: UploadFile = File(...)):
   storage.index_data(clean_data)
   print("Index:", storage.index.describe_index_stats())
   return JSONResponse({"message": clean_data != None})
-
 
 @app.post('/generate')
 def generate(question: str):  
