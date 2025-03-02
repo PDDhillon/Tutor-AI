@@ -1,13 +1,14 @@
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { IMessage } from "@/interfaces/IMessage";
 import { Send } from "lucide-react"
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 import Message from "@/components/Message";
 
 
@@ -26,33 +27,54 @@ export default function ChatWindow() {
     const [messages, setMessages] = useState<IMessage[]>([{
         message: "Hi, how can I help you today?",
         user: false
-    },
-    {
-        message: "Hey, I'm having trouble with my account.",
-        user: true
-    },
-    {
-        message: "What seems to be the problem?",
-        user: false
-    },
-    {
-        message: "I can't log in.",
-        user: true
-    }]);
+    },]);
+
+    const [currentMessage, setCurrentMessage] = useState("");
+
+    useEffect(() => {
+        if(currentMessage === "") 
+            return;
+
+        const copy = [...messages];
+        //last message will always be the one that needs updating
+        copy[copy.length -1].message = currentMessage;
+        setMessages(copy);
+    }, [currentMessage]);
+
+    async function fetchData(query: String) {
+        await fetchEventSource("http://localhost:8000/chat", {
+            headers: {
+                "Content-Type": "application/json"
+            },
+            method: "POST",
+            body: JSON.stringify({ query }),
+            onmessage: (event) => {
+                console.log(`Received event: ${event.event}`);
+                setCurrentMessage((prev) => prev + event.data);
+            }
+        })
+    }
 
     function onSubmit(values: z.infer<typeof formSchema>) {
-        setMessages([...messages, { message: values.message, user: true }]);
+        const test = async () => {
+            await fetchData(values.message);
+        }
+        setCurrentMessage("");
+        setMessages((prev) => [...prev, { id: 2, message: values.message, user: true }, { id: 3, message: "", user: false }]);
+        form.reset();
+        test();
     }
+
     return (
-        <Card>
+        <Card className="h-full">
             <CardHeader>
                 <CardTitle>Tutor AI</CardTitle>
-                <CardDescription>Placeholder</CardDescription>
+                <CardDescription>Your helpful education assistant</CardDescription>
             </CardHeader>
-            <CardContent>
-                <div className="grid w-full max-w-sm items-center gap-1.5">
-                    <Card>
-                        <CardContent>
+            <CardContent className="justify-items-center">
+                <div className="grid w-full items-center gap-5">
+                    <Card className="w-full ">
+                        <CardContent className="">
                             <div className="p-6 space-y-4">
                                 {messages.map((message, index) => {
                                     return <Message key={index} message={message.message} user={message.user} />
@@ -62,14 +84,14 @@ export default function ChatWindow() {
                     </Card>
                     <div className="">
                         <Form {...form}>
-                            <form className="flex w-full max-w-sm items-center space-x-2" onSubmit={form.handleSubmit(onSubmit)}>
+                            <form className="flex w-full space-x-2 justify-content-center" onSubmit={form.handleSubmit(onSubmit)}>
                                 <FormField
                                     control={form.control}
                                     name="message"
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormControl>
-                                                <Input className=" w-full max-w-sm" placeholder="Type your message here ..." {...field} />
+                                                <Input className=" w-full " placeholder="Type your message here ..." {...field} />
                                             </FormControl>
                                         </FormItem>
                                     )}>

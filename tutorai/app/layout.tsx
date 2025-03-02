@@ -31,7 +31,7 @@ export default function RootLayout({
       >
         <SidebarProvider>
           <AppSidebar></AppSidebar>
-          <main>
+          <main className="h-full w-full justify-center items-center">
             <SidebarTrigger></SidebarTrigger>
             {children}
           </main>
