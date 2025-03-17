@@ -1,7 +1,7 @@
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { IMessage } from "@/interfaces/IMessage";
 import { Send } from "lucide-react"
 import { useForm } from "react-hook-form";
@@ -25,21 +25,27 @@ export default function ChatWindow() {
     })
 
     const [messages, setMessages] = useState<IMessage[]>([{
-        message: "Hi, how can I help you today?",
+        message: "Hi, how can I help you today?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         user: false
     },]);
 
     const [currentMessage, setCurrentMessage] = useState("");
+    const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
     useEffect(() => {
-        if(currentMessage === "") 
+        if (currentMessage === "")
             return;
 
         const copy = [...messages];
         //last message will always be the one that needs updating
-        copy[copy.length -1].message = currentMessage;
+        copy[copy.length - 1].message = currentMessage;
         setMessages(copy);
+
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollTop = messagesEndRef.current.scrollHeight;
+        }
     }, [currentMessage]);
+
 
     async function fetchData(query: String) {
         await fetchEventSource("http://localhost:8000/chat", {
@@ -66,23 +72,24 @@ export default function ChatWindow() {
     }
 
     return (
-        <Card className="h-full">
+        <Card className="max-w-5xl">
             <CardHeader>
                 <CardTitle>Tutor AI</CardTitle>
                 <CardDescription>Your helpful education assistant</CardDescription>
             </CardHeader>
             <CardContent className="justify-items-center">
-                <div className="grid w-full items-center gap-5">
-                    <Card className="w-full ">
-                        <CardContent className="">
-                            <div className="p-6 space-y-4">
+                <div className="w-full justify-items-center gap-5">
+                    <Card className="w-11/12 max-w-7xl ">
+                        <CardContent className="min-h-96 max-h-96 overflow-y-auto" ref={messagesEndRef}>
+                            <div className="p-6 space-y-4 max-h-full">
                                 {messages.map((message, index) => {
                                     return <Message key={index} message={message.message} user={message.user} />
                                 })}
+                                <div ref={messagesEndRef}></div>
                             </div>
                         </CardContent>
                     </Card>
-                    <div className="">
+                    <div className="p-4 ">
                         <Form {...form}>
                             <form className="flex w-full space-x-2 justify-content-center" onSubmit={form.handleSubmit(onSubmit)}>
                                 <FormField
@@ -91,7 +98,7 @@ export default function ChatWindow() {
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormControl>
-                                                <Input className=" w-full " placeholder="Type your message here ..." {...field} />
+                                                <Input className=" min-w-96" placeholder="Type your message here ..." {...field} />
                                             </FormControl>
                                         </FormItem>
                                     )}>
