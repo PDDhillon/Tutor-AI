@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import HumanMessage, ToolMessage
 from typing import Annotated
-import time
+from fastapi import File, UploadFile
 
 app = FastAPI()
 
@@ -43,6 +43,14 @@ app.add_middleware(
 def healthcheck():
   msg = "API is up and running!"  
   return {"message": msg}
+
+@app.post('/index')
+async def index(file: UploadFile = File(...)):
+  """Index a file"""
+  filename = file.filename
+  await chatservice.index(file)
+  print(filename)
+  return {"message": "File indexed successfully"}
 
 @app.post('/generate')
 def generate(question: str):  

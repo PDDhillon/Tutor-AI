@@ -10,7 +10,10 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem } from "./ui/form";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import Message from "@/components/Message";
-
+import { Loader2 } from "lucide-react"
+import { Label } from "./ui/label";
+import { Progress } from "./ui/progress";
+import { useToast } from "@/hooks/use-toast"
 
 const formSchema = z.object({
     message: z.string().nonempty({ message: "Message cannot be empty." })
@@ -25,11 +28,13 @@ export default function ChatWindow() {
     })
 
     const [messages, setMessages] = useState<IMessage[]>([{
-        message: "Hi, how can I help you today?aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        message: "Hi, how can I help you today?",
         user: false
     },]);
 
     const [currentMessage, setCurrentMessage] = useState("");
+    const [progress, setProgress] = useState(0);
+    const { toast } = useToast()
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
     useEffect(() => {
@@ -61,23 +66,76 @@ export default function ChatWindow() {
         })
     }
 
+    async function uploadFile(file: File) {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const data = await fetch("http://localhost:8000/index", {
+            method: "POST",
+            body: formData
+        })
+
+        if (!data.ok) {
+            console.error("Error uploading file");
+            return;
+        }
+        else {
+            const json = await data.json();
+            console.log(`Received event: ${data}`);
+            setMessages((prev) => [...prev, { message: "File Uploaded: " + file.name, user: true }]);
+        }
+    }
+
     function onSubmit(values: z.infer<typeof formSchema>) {
         const test = async () => {
             await fetchData(values.message);
         }
         setCurrentMessage("");
-        setMessages((prev) => [...prev, { id: 2, message: values.message, user: true }, { id: 3, message: "", user: false }]);
+        setMessages((prev) => [...prev, { message: values.message, user: true }, { message: "", user: false }]);
         form.reset();
         test();
     }
 
     return (
-        <Card className="max-w-5xl">
+        <Card className="w-7xl">
             <CardHeader>
-                <CardTitle>Tutor AI</CardTitle>
-                <CardDescription>Your helpful education assistant</CardDescription>
+                <div className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Tutor AI</CardTitle>
+                        <CardDescription>Your helpful education assistant</CardDescription>
+                    </div>
+                    {/* <div>
+                        <UploadButton></UploadButton>
+                    </div> */}
+                </div>
             </CardHeader>
             <CardContent className="justify-items-center">
+                <div className="w-8/12 py-5" hidden={progress === 100}>
+                    <div id="input" hidden={progress !== 0}>
+                        <Label htmlFor="file">File</Label>
+                        <Input type="file" id="file" onChange={async (e) => {
+                            setProgress(20);
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                console.log("File selected: ", file.name);
+                                await uploadFile(file).then(() => {
+                                    setProgress(100); toast({
+                                        title: "File uploaded successfully",
+                                        description: "You can now ask questions about the file."
+                                    });
+                                });
+                            }
+                        }} />
+                    </div >
+                    <div id="progress" className="py-5" hidden={progress === 0}>
+                        <div className="flex flex-row items-center justify-between">
+                            <p>Uploading </p>
+                            <Loader2 className="animate-spin" />
+                        </div>
+                        <Progress value={progress} className="w-full" hidden={false} />
+                    </div>
+
+                </div>
                 <div className="w-full justify-items-center gap-5">
                     <Card className="w-11/12 max-w-7xl ">
                         <CardContent className="min-h-96 max-h-96 overflow-y-auto" ref={messagesEndRef}>
